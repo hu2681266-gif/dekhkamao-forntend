@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ur-PK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DekhKamao — Dekho, Kamao</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pine:#0F2E24; --pine-light:#1B4636; --paper:#F1F4EF; --paper-card:#FFFFFF;
+    --gold:#D4A537; --gold-deep:#B8871F; --brick:#C1443C; --leaf:#3F8F5F;
+    --ink:#16241D; --ink-soft:#5C6B62; --border:#DDE4DC;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Auth screen ---------- */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .auth-card{background:var(--paper-card);border:1px solid var(--border);border-radius:16px;padding:32px;width:100%;max-width:380px;}
+  .auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Sora';font-weight:800;color:var(--pine);font-size:17px;}
+  .auth-brand div div:first-child{font-family:'Sora';font-weight:700;font-size:17px;}
+  .auth-brand div div:last-child{font-size:11px;color:var(--ink-soft);}
+  .auth-card h2{font-family:'Sora';font-size:17px;margin:0 0 18px 0;}
+  .field{margin-bottom:14px;}
+  .field label{font-size:12.5px;font-weight:600;display:block;margin-bottom:6px;}
+  .field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;font-family:'Inter';}
+  .field input:focus{outline:2px solid var(--gold);outline-offset:1px;}
+  .btn-primary{all:unset;cursor:pointer;background:var(--gold);color:var(--pine);font-weight:700;font-size:13.5px;padding:11px;border-radius:9px;text-align:center;width:100%;display:block;box-sizing:border-box;}
+  .auth-switch{text-align:center;margin-top:14px;font-size:12.5px;color:var(--ink-soft);}
+  .auth-switch a{color:var(--gold-deep);cursor:pointer;font-weight:600;}
+  .auth-error{background:#FBE7E5;color:var(--brick);font-size:12px;padding:9px 12px;border-radius:8px;margin-bottom:14px;display:none;}
+  .config-warn{background:#FBF1DE;color:#7A5C14;font-size:11.5px;padding:10px 12px;border-radius:8px;margin-bottom:16px;line-height:1.5;}
+
+  /* ---------- App shell (reused from prototype) ---------- */
+  .app{display:none;min-height:100vh;}
+  .app.show{display:flex;}
+  .sidebar{width:220px;background:var(--pine);color:#EAF3EC;flex-shrink:0;padding:24px 16px;display:flex;flex-direction:column;gap:6px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:0 8px 24px 8px;}
+  .brand-tag{font-size:10px;color:#9FBBA9;margin-top:1px;}
+  .nav-btn{all:unset;cursor:pointer;padding:10px 12px;border-radius:8px;font-size:13.5px;font-weight:500;color:#CFE0D5;display:flex;align-items:center;gap:9px;}
+  .nav-btn:hover{background:var(--pine-light);}
+  .nav-btn.active{background:var(--gold);color:var(--pine);font-weight:700;}
+  .nav-divider{height:1px;background:#2A4C3C;margin:10px 4px;}
+  .sidebar-foot{margin-top:auto;font-size:10.5px;color:#84A292;padding:0 8px;line-height:1.5;}
+
+  .main{flex:1;display:flex;flex-direction:column;min-width:0;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:var(--paper-card);border-bottom:1px solid var(--border);}
+  .topbar h1{font-family:'Sora';font-size:18px;margin:0;}
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .wallet-pill{display:flex;align-items:center;gap:10px;background:var(--pine);color:#fff;padding:8px 16px;border-radius:100px;}
+  .wallet-pill .coin{width:18px;height:18px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:var(--pine);}
+  .wallet-pill .amt{font-family:'JetBrains Mono';font-weight:700;font-size:14.5px;}
+  .logout-btn{all:unset;cursor:pointer;font-size:12px;color:var(--ink-soft);font-weight:600;}
+
+  .content{padding:26px 28px;overflow-y:auto;flex:1;}
+  .view{display:none;} .view.active{display:block;}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--paper-card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .stat-card .label{font-size:11px;color:var(--ink-soft);text-transform:uppercase;font-weight:600;}
+  .stat-card .value{font-family:'JetBrains Mono';font-size:22px;font-weight:700;margin-top:6px;}
+  .stat-card .value.gold{color:var(--gold-deep);}
+  .section-title{font-family:'Sora';font-size:15px;font-weight:700;margin:0 0 12px 0;display:flex;align-items:center;gap:8px;}
+  .eyebrow{font-size:10.5px;background:var(--pine);color:#EAF3EC;padding:2px 8px;border-radius:100px;font-family:'Inter';font-weight:600;}
+  .card{background:var(--paper-card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;}
+
+  .ad-video{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}
+  .video-box{width:260px;height:150px;border-radius:10px;background:linear-gradient(135deg,var(--pine) 0%,#08201A 100%);position:relative;display:flex;align-items:center;justify-content:center;}
+  .play-btn{width:52px;height:52px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;}
+  .progress-track{position:absolute;bottom:0;left:0;width:100%;height:5px;background:rgba(255,255,255,.15);}
+  .progress-fill{height:100%;width:0%;background:var(--gold);transition:width .1s linear;}
+  .video-info h3{font-family:'Sora';font-size:15px;margin:0 0 6px 0;}
+  .video-info p{font-size:12.5px;color:var(--ink-soft);margin:0 0 12px 0;line-height:1.5;}
+  .reward-tag{display:inline-flex;background:#F5EDDA;color:var(--gold-deep);font-family:'JetBrains Mono';font-weight:700;font-size:13px;padding:5px 12px;border-radius:8px;}
+  .cooldown-txt{font-size:11.5px;color:var(--ink-soft);margin-top:8px;}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;}
+  th{text-align:left;color:var(--ink-soft);font-weight:600;font-size:11px;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:10px;border-bottom:1px solid var(--border);}
+  .withdraw-form{display:flex;flex-direction:column;gap:14px;max-width:380px;}
+  select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13.5px;}
+  .empty{color:var(--ink-soft);font-size:12.5px;padding:20px;text-align:center;}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--pine);color:#EAF3EC;padding:12px 18px;border-radius:10px;font-size:13px;display:none;z-index:99;}
+</style>
+</head>
+<body>
+
+<!-- ============= AUTH SCREEN ============= -->
+<div class="auth-wrap" id="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="brand-mark">DK</div>
+      <div><div>DekhKamao</div><div>Dekho, Kamao</div></div>
+    </div>
+
+    <div class="config-warn">
+      Ye frontend ek real backend server se connect hota hai. Neeche <code>API_BASE_URL</code> ko apne deploy kiye hue backend ke URL se replace karein (code mein, top par).
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <div id="login-form">
+      <h2>Login Karein</h2>
+      <div class="field"><label>Email</label><input type="email" id="login-email"></div>
+      <div class="field"><label>Password</label><input type="password" id="login-password"></div>
+      <button class="btn-primary" id="login-btn">Login</button>
+      <div class="auth-switch">Account nahi hai? <a id="show-signup">Signup karein</a></div>
+    </div>
+
+    <div id="otp-form" style="display:none;">
+      <h2>Verification Code Darj Karein</h2>
+      <p style="font-size:12.5px;color:var(--ink-soft);margin:-8px 0 14px 0;">Aapki email par 6-digit code bheja gaya hai — 5 minute ke liye valid hai.</p>
+      <div class="field"><label>6-Digit Code</label><input type="text" id="otp-code" maxlength="6" inputmode="numeric" placeholder="000000" style="letter-spacing:6px;text-align:center;font-family:'JetBrains Mono';font-size:18px;"></div>
+      <button class="btn-primary" id="otp-btn">Verify &amp; Login</button>
+      <div class="auth-switch"><a id="back-to-login">Wapas login screen par jayein</a></div>
+    </div>
+
+    <div id="signup-form" style="display:none;">
+      <h2>Naya Account Banayein</h2>
+      <div class="field"><label>Poora Naam</label><input type="text" id="signup-name"></div>
+      <div class="field"><label>Email</label><input type="email" id="signup-email"></div>
+      <div class="field"><label>Password (kam se kam 8 characters)</label><input type="password" id="signup-password"></div>
+      <button class="btn-primary" id="signup-btn">Account Banayein</button>
+      <div class="auth-switch">Pehle se account hai? <a id="show-login">Login karein</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============= MAIN APP ============= -->
+<div class="app" id="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">DK</div>
+      <div><div style="font-family:'Sora';font-weight:700;font-size:16px;">DekhKamao</div><div class="brand-tag">Dekho, Kamao</div></div>
+    </div>
+    <button class="nav-btn active" data-view="dashboard">🏠&nbsp; Dashboard</button>
+    <button class="nav-btn" data-view="earn">🎬&nbsp; Watch &amp; Earn</button>
+    <button class="nav-btn" data-view="wallet">💳&nbsp; Wallet</button>
+    <button class="nav-btn" data-view="withdraw">⬇️&nbsp; Withdraw</button>
+    <div class="nav-divider"></div>
+    <button class="nav-btn" data-view="admin" id="admin-nav-btn" style="display:none;">🛠️&nbsp; Admin Panel</button>
+    <div class="sidebar-foot">Real backend se connected — sara reward server par calculate hota hai.</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="topbar-title">Dashboard</h1>
+      <div class="topbar-right">
+        <div class="wallet-pill"><div class="coin">₨</div><div class="amt mono" id="wallet-amt">0</div></div>
+        <button class="logout-btn" id="logout-btn">Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="view active" id="view-dashboard">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="label">Wallet Balance</div><div class="value gold" id="stat-balance">₨ 0</div></div>
+          <div class="stat-card"><div class="label">Total Earned</div><div class="value" id="stat-total">₨ 0</div></div>
+          <div class="stat-card"><div class="label">Ads Dekhe Aaj</div><div class="value" id="stat-ads">0 / -</div></div>
+          <div class="stat-card"><div class="label">Withdraw Threshold</div><div class="value">₨ 500</div></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-earn">
+        <div class="section-title">Video Ad <span class="eyebrow">Server-verified Reward</span></div>
+        <div class="card ad-video">
+          <div class="video-box" id="video-box">
+            <button class="play-btn" id="play-btn">▶</button>
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+          </div>
+          <div class="video-info">
+            <h3>1 minute video ad dekhein</h3>
+            <p>Ad complete hone par server reward verify kar ke wallet update karega.</p>
+            <span class="reward-tag" id="video-reward">Reward calculate ho raha hai...</span>
+            <div class="cooldown-txt" id="video-cooldown"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-wallet">
+        <div class="section-title">Transaction History</div>
+        <div class="card" style="padding:0;">
+          <table><thead><tr><th>Waqt</th><th>Tafseel</th><th>Amount</th></tr></thead><tbody id="tx-table"></tbody></table>
+          <div class="empty" id="tx-empty">Abhi tak koi transaction nahi.</div>
+        </div>
+      </div>
+
+      <div class="view" id="view-withdraw">
+        <div class="section-title">Paise Nikalwayein</div>
+        <div class="card">
+          <div class="withdraw-form">
+            <div class="field"><label>Amount (₨)</label><input type="number" id="wd-amount" min="500"></div>
+            <div class="field"><label>Method</label>
+              <select id="wd-method"><option>Easypaisa</option><option>JazzCash</option><option>Bank Transfer</option></select>
+            </div>
+            <div class="field"><label>Account Number</label><input type="text" id="wd-account"></div>
+            <button class="btn-primary" id="wd-submit">Withdrawal Request Bhejein</button>
+          </div>
+        </div>
+        <div class="section-title">Aapke Requests</div>
+        <div class="card" style="padding:0;">
+          <table><thead><tr><th>Amount</th><th>Method</th><th>Status</th></tr></thead><tbody id="wd-table"></tbody></table>
+          <div class="empty" id="wd-empty">Koi withdrawal request nahi.</div>
+        </div>
+      </div>
+
+      <div class="view" id="view-admin">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="label">Total Ad Revenue</div><div class="value gold" id="adm-revenue">₨ 0</div></div>
+          <div class="stat-card"><div class="label">Users ko Diya Gaya</div><div class="value" id="adm-paidout">₨ 0</div></div>
+          <div class="stat-card"><div class="label">Margin</div><div class="value" id="adm-margin">₨ 0</div></div>
+          <div class="stat-card"><div class="label">Total Users</div><div class="value" id="adm-users">0</div></div>
+        </div>
+        <div class="section-title">Revenue Settings</div>
+        <div class="card">
+          <div class="withdraw-form" style="max-width:420px;">
+            <div class="field">
+              <label>Advertiser aapko per-ad kitna deta hai (₨)</label>
+              <input type="number" id="set-advrate" step="0.1" min="0.1">
+            </div>
+            <div class="field">
+              <label>User ka share (%)</label>
+              <input type="number" id="set-share" min="5" max="90">
+            </div>
+            <div class="field">
+              <label>Roz max kitne ads</label>
+              <input type="number" id="set-cap" min="1" max="50">
+            </div>
+            <div class="hint" id="set-preview" style="margin-bottom:4px;"></div>
+            <button class="btn-primary" id="set-save">Settings Save Karein</button>
+          </div>
+        </div>
+
+        <div class="section-title">Pending Withdrawals</div>
+        <div class="card" style="padding:0;">
+          <table><thead><tr><th>User</th><th>Amount</th><th>Method</th><th>Action</th></tr></thead><tbody id="adm-wd-table"></tbody></table>
+          <div class="empty" id="adm-wd-empty">Koi pending request nahi.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================================
+// YAHAN APNE DEPLOYED BACKEND KA URL DAALEIN (Render se milega)
+// ================================================================
+const API_BASE_URL = 'https://YOUR-BACKEND-URL.onrender.com';
+// ================================================================
+
+let token = localStorage.getItem('dk_token') || null;
+let currentUser = null;
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(()=> t.style.display = 'none', 2500);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE_URL + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+      ...(options.headers || {}),
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const data = await res.json().catch(()=>({}));
+  if (!res.ok) throw new Error(data.error || 'Kuch masla ho gaya.');
+  return data;
+}
+
+// ---------- Auth screen switching ----------
+document.getElementById('show-signup').onclick = () => {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('signup-form').style.display = 'block';
+};
+document.getElementById('show-login').onclick = () => {
+  document.getElementById('signup-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+};
+
+function showAuthError(msg){
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+let pendingLoginEmail = null;
+
+document.getElementById('login-btn').onclick = async () => {
+  try {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const data = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    if (data.otpRequired) {
+      pendingLoginEmail = data.email;
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('otp-form').style.display = 'block';
+      toast('Verification code email par bhej diya gaya hai.');
+    }
+  } catch (e) { showAuthError(e.message); }
+};
+
+document.getElementById('otp-btn').onclick = async () => {
+  try {
+    const otp = document.getElementById('otp-code').value.trim();
+    const data = await api('/api/auth/verify-otp', { method: 'POST', body: { email: pendingLoginEmail, otp } });
+    onAuthSuccess(data);
+  } catch (e) { showAuthError(e.message); }
+};
+
+document.getElementById('back-to-login').onclick = () => {
+  document.getElementById('otp-form').style.display = 'none';
+  document.getElementById('login-form').style.display = 'block';
+};
+
+document.getElementById('signup-btn').onclick = async () => {
+  try {
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const data = await api('/api/auth/signup', { method: 'POST', body: { name, email, password } });
+    onAuthSuccess(data);
+  } catch (e) { showAuthError(e.message); }
+};
+
+function onAuthSuccess(data){
+  token = data.token;
+  currentUser = data.user;
+  localStorage.setItem('dk_token', token);
+  document.getElementById('auth-wrap').style.display = 'none';
+  document.getElementById('app').classList.add('show');
+  if (currentUser.role === 'admin') document.getElementById('admin-nav-btn').style.display = 'flex';
+  loadWallet();
+  loadWithdrawals();
+}
+
+document.getElementById('logout-btn').onclick = () => {
+  localStorage.removeItem('dk_token');
+  location.reload();
+};
+
+// ---------- Nav ----------
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    document.getElementById('topbar-title').textContent = btn.textContent.trim().replace(/^\S+\s/,'');
+    if (btn.dataset.view === 'admin') loadAdmin();
+  });
+});
+
+// ---------- Wallet ----------
+async function loadWallet(){
+  try {
+    const data = await api('/api/wallet');
+    document.getElementById('wallet-amt').textContent = data.balance.toLocaleString();
+    document.getElementById('stat-balance').textContent = '₨ ' + data.balance.toLocaleString();
+    document.getElementById('stat-total').textContent = '₨ ' + data.totalEarned.toLocaleString();
+
+    const tbody = document.getElementById('tx-table');
+    const empty = document.getElementById('tx-empty');
+    tbody.innerHTML = '';
+    if (data.transactions.length === 0) { empty.style.display='block'; }
+    else {
+      empty.style.display='none';
+      data.transactions.forEach(tx=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(tx.createdAt).toLocaleString()}</td><td>${tx.description}</td><td class="mono">+₨${tx.amount}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch (e) { toast(e.message); }
+}
+
+// ---------- Video ad ----------
+const playBtn = document.getElementById('play-btn');
+const progressFill = document.getElementById('progress-fill');
+playBtn.addEventListener('click', () => {
+  playBtn.style.display = 'none';
+  let progress = 0;
+  const duration = 15000;
+  const iv = setInterval(()=>{
+    progress += 60;
+    progressFill.style.width = Math.min(100, (progress/duration)*100) + '%';
+    if (progress >= duration) {
+      clearInterval(iv);
+      finishAd();
+    }
+  }, 60);
+});
+
+async function finishAd(){
+  try {
+    const data = await api('/api/ads/watch', { method: 'POST' });
+    document.getElementById('video-reward').textContent = `+₨${data.reward} mila!`;
+    document.getElementById('stat-ads').textContent = `${data.adsWatchedToday} / ${data.dailyCap}`;
+    toast(`Reward mila: ₨${data.reward}`);
+    loadWallet();
+  } catch (e) {
+    toast(e.message);
+  }
+  progressFill.style.width = '0%';
+  playBtn.style.display = 'flex';
+}
+
+// ---------- Withdraw ----------
+document.getElementById('wd-submit').onclick = async () => {
+  try {
+    const amount = parseFloat(document.getElementById('wd-amount').value);
+    const method = document.getElementById('wd-method').value;
+    const account = document.getElementById('wd-account').value.trim();
+    await api('/api/withdraw', { method: 'POST', body: { amount, method, account } });
+    toast('Withdrawal request bhej di gayi.');
+    loadWallet(); loadWithdrawals();
+  } catch (e) { toast(e.message); }
+};
+
+async function loadWithdrawals(){
+  try {
+    const data = await api('/api/withdraw/mine');
+    const tbody = document.getElementById('wd-table');
+    const empty = document.getElementById('wd-empty');
+    tbody.innerHTML = '';
+    if (data.length === 0) { empty.style.display='block'; }
+    else {
+      empty.style.display='none';
+      data.forEach(wd=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="mono">₨${wd.amount}</td><td>${wd.method}</td><td>${wd.status}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch (e) { toast(e.message); }
+}
+
+// ---------- Admin ----------
+async function loadAdmin(){
+  try {
+    const stats = await api('/api/admin/stats');
+    document.getElementById('adm-revenue').textContent = '₨ ' + stats.adminRevenue.toLocaleString();
+    document.getElementById('adm-paidout').textContent = '₨ ' + stats.paidOut.toLocaleString();
+    document.getElementById('adm-margin').textContent = '₨ ' + stats.margin.toLocaleString();
+    document.getElementById('adm-users').textContent = stats.totalUsers;
+
+    if (stats.settings) {
+      document.getElementById('set-advrate').value = stats.settings.advertiserRatePerAd;
+      document.getElementById('set-share').value = stats.settings.userSharePercent;
+      document.getElementById('set-cap').value = stats.settings.dailyAdCap;
+      updateSettingsPreview();
+    }
+
+    const withdrawals = await api('/api/admin/withdrawals');
+    const tbody = document.getElementById('adm-wd-table');
+    const empty = document.getElementById('adm-wd-empty');
+    tbody.innerHTML = '';
+    if (withdrawals.length === 0) { empty.style.display='block'; }
+    else {
+      empty.style.display='none';
+      withdrawals.forEach(wd=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${wd.user?.name || '-'}</td><td class="mono">₨${wd.amount}</td><td>${wd.method}</td>
+          <td><button data-id="${wd._id}" data-act="approve" class="wd-act">Approve</button>
+              <button data-id="${wd._id}" data-act="reject" class="wd-act">Reject</button></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll('.wd-act').forEach(btn=>{
+        btn.onclick = async () => {
+          await api(`/api/admin/withdrawals/${btn.dataset.id}/${btn.dataset.act}`, { method: 'POST' });
+          loadAdmin();
+        };
+      });
+    }
+  } catch (e) { toast(e.message); }
+}
+
+function updateSettingsPreview(){
+  const rate = parseFloat(document.getElementById('set-advrate').value) || 0;
+  const share = parseFloat(document.getElementById('set-share').value) || 0;
+  const userAmt = (rate * share / 100).toFixed(2);
+  const marginAmt = (rate - userAmt).toFixed(2);
+  document.getElementById('set-preview').textContent = `Har ad par: user ko ₨${userAmt}, aapko ₨${marginAmt} milega.`;
+}
+['set-advrate','set-share'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', updateSettingsPreview);
+});
+
+document.getElementById('set-save').onclick = async () => {
+  try {
+    const advertiserRatePerAd = parseFloat(document.getElementById('set-advrate').value);
+    const userSharePercent = parseFloat(document.getElementById('set-share').value);
+    const dailyAdCap = parseInt(document.getElementById('set-cap').value);
+    await api('/api/admin/settings', { method: 'PUT', body: { advertiserRatePerAd, userSharePercent, dailyAdCap } });
+    toast('Settings save ho gayin.');
+    loadAdmin();
+  } catch (e) { toast(e.message); }
+};
+
+// ---------- Init: check if already logged in ----------
+if (token) {
+  api('/api/wallet').then(()=>{
+    document.getElementById('auth-wrap').style.display = 'none';
+    document.getElementById('app').classList.add('show');
+    loadWallet(); loadWithdrawals();
+  }).catch(()=>{
+    localStorage.removeItem('dk_token');
+  });
+}
+</script>
+</body>
+</html>
